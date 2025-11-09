@@ -1,57 +1,86 @@
-const express = require('express')
-require('dotenv').config()
-const app = express()
-const port = 3000
+const express = require('express');
+require('dotenv').config();
 const cors = require('cors');
-
-app.use(cors())
-app.use(express.json())
-
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
-
-
 const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = "mongodb+srv://DB_USER:DB_PASS@cluster0.irtmkrl.mongodb.net/?appName=Cluster0";
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+
+// ✅ Correct MongoDB URI with admin authentication
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.irtmkrl.mongodb.net/?authSource=admin&retryWrites=true&w=majority`;
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
 async function run() {
   try {
-   
     await client.connect();
-    const database = client.db('PawMart');
-    const productsCollection = database.collection('Products')
 
-    app.get('/Products', async(req,res)=>{
-     try{
-      const products = await productsCollection.find({}).toArray();
-      res.status(200).json(products)
-     }
-     catch(err){
-       res.status(500).json({ error: 'Failed to fetch products' });
-     }
+    const db = client.db('PawMart');
+    const productsCollection = db.collection('Products');
+    const orderCollection = db.collection('order')
 
-    })
 
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
+    console.log('✅ Connected to MongoDB → Database: PawMart');
+
+    const collections = await db.listCollections().toArray();
+    console.log('📦 PawMart Collections:', collections.map(c => c.name));
+
+    // ------------------ ROUTES ------------------
+
+    // Get all products
+    app.get('/Products', async (req, res) => {
+      try {
+        const products = await productsCollection.find({}).toArray();
+        console.log(`✅ Sent ${products.length} products from PawMart.Products`);
+        res.send(products);
+      } catch (error) {
+        console.error('❌ Error fetching products:', error);
+        res.status(500).json({ message: 'Failed to fetch products' });
+      }
+    });
+
+    // Get products by category
+app.get('/Products/:category', async (req, res) => {
+  const category = decodeURIComponent(req.params.category).trim();
+  const products = await productsCollection
+    .find({ category: category }) // exact match since names now match
+    .toArray();
+  res.send(products);
+});
+
+
+
+
+
+app.get('/myOrder', async (req,res)=>{
+   try {
+        const order = await orderCollection.find({}).toArray();
+        console.log(`✅ Sent ${order.length} products from PawMart.Products`);
+        res.send(order);
+      } catch (error) {
+        console.error('❌ Error fetching products:', error);
+        res.status(500).json({ message: 'Failed to fetch products' });
+      }
+
+})
+
+
+  } catch (err) {
+    console.error('🚨 MongoDB Connection Error:', err);
   }
 }
+
 run().catch(console.dir);
 
-
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+  console.log(`🚀 Server running on port ${port}`);
+});
