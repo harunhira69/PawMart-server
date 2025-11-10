@@ -1,7 +1,7 @@
 const express = require('express');
 require('dotenv').config();
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,7 +26,8 @@ async function run() {
 
     const db = client.db('PawMart');
     const productsCollection = db.collection('Products');
-    const orderCollection = db.collection('order')
+    const orderCollection = db.collection('order');
+    const listingsCollection = db.collection('Listings');
 
 
     console.log('✅ Connected to MongoDB → Database: PawMart');
@@ -47,6 +48,52 @@ async function run() {
         res.status(500).json({ message: 'Failed to fetch products' });
       }
     });
+
+    // add listing product
+ app.post('/Listings', async (req, res) => {
+  try {
+    const listing = req.body;
+    listing.createdAt = new Date();
+
+    const result = await listingsCollection.insertOne(listing); // ✅ correct
+    console.log(result)
+
+    res.status(201).json({ insertedId: result.insertedId });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to add listing' });
+  }
+});
+
+// show listing details
+app.get('/item/:id',async(req,res)=>{
+  const {id}=req.params;
+  console.log(req.params)
+  try{
+    const item = await productsCollection.findOne({_id:new ObjectId(id)})
+    if(!item){
+    item = await listingsCollection.findOne({_id:new ObjectId(id)})
+    }
+    if(!item){
+      res.status(404).send({message:'Items Not Found'})
+    }
+  }catch(err){
+    res.status(500).send({message:'Failed to Fetch'})
+  }
+})
+
+// pets @ supplies page
+app.get('/all-item',async(req,res)=>{
+  try{
+    const products = await productsCollection.find({}).toArray();
+    const listings = await listingsCollection.find({}).toArray();
+
+    const allItem = [...products,...listings]
+    res.send(allItem)
+  }catch(err){
+    res.status(500).send({message:'Failed to fetch all items'})
+  }
+})
+
 
     // Get products by category
 app.get('/Products/:category', async (req, res) => {
