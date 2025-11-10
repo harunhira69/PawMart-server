@@ -57,7 +57,18 @@ app.get('/Products/:category', async (req, res) => {
   res.send(products);
 });
 
+// ✅ Get latest 6 listings (sorted by newest)
+app.get('/recent-listings', async (req, res) => {
+  try {
+    const listings = await productsCollection
+      .aggregate([{ $sample: { size: 6 } }])
+      .toArray();
 
+    res.send(listings);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch recent listings" });
+  }
+});
 
 
 
