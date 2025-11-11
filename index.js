@@ -65,21 +65,43 @@ async function run() {
 });
 
 // show listing details
-app.get('/item/:id',async(req,res)=>{
-  const {id}=req.params;
-  console.log(req.params)
-  try{
-    const item = await productsCollection.findOne({_id:new ObjectId(id)})
-    if(!item){
-    item = await listingsCollection.findOne({_id:new ObjectId(id)})
+app.get('/item/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    let item = await productsCollection.findOne({ _id: new ObjectId(id) });
+
+    if (!item) {
+      item = await listingsCollection.findOne({ _id: new ObjectId(id) });
     }
-    if(!item){
-      res.status(404).send({message:'Items Not Found'})
+
+    if (!item) {
+      return res.status(404).send({ message: 'Item Not Found' });
     }
-  }catch(err){
-    res.status(500).send({message:'Failed to Fetch'})
+
+    res.send(item);
+  } catch (err) {
+    res.status(500).send({ message: 'Failed to Fetch' });
   }
+});
+// submit order
+
+app.post('/order',async(req,res)=>{
+ try{
+   const order = req.body;
+  console.log(order)
+  order.createdAt = new Date();
+  const result = await orderCollection.insertOne(order);
+  console.log('after order insert',result)
+  res.status(200).send({message:'Order placed successfully'})
+ }catch(err){
+  res.status(500).send({message:'Failed to Submit Oredr',err})
+ }
+
 })
+
+
+
 
 // pets @ supplies page
 app.get('/all-item',async(req,res)=>{
@@ -104,7 +126,7 @@ app.get('/Products/:category', async (req, res) => {
   res.send(products);
 });
 
-// ✅ Get latest 6 listings (sorted by newest)
+//  latest 6 listings (sorted by newest)
 app.get('/recent-listings', async (req, res) => {
   try {
     const listings = await productsCollection
