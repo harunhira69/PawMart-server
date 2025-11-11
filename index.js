@@ -89,15 +89,30 @@ app.get('/item/:id', async (req, res) => {
 app.post('/order',async(req,res)=>{
  try{
    const order = req.body;
-  console.log(order)
+  // console.log(order)
   order.createdAt = new Date();
   const result = await orderCollection.insertOne(order);
-  console.log('after order insert',result)
+  // console.log('after order insert',result)
   res.status(200).send({message:'Order placed successfully'})
  }catch(err){
   res.status(500).send({message:'Failed to Submit Oredr',err})
  }
 
+});
+
+// get my-order page
+app.get('/order',async(req,res)=>{
+     const email = req.query.email;
+    console.log(email);
+    if(!email)return res.status(400).send({message:'Email is required'})
+  try{
+ 
+   const orders = await orderCollection.find({buyerEmail:email}).toArray();
+   console.log(orders)
+   res.send(orders);
+  }catch(err){
+    res.send(err)
+  }
 })
 
 
