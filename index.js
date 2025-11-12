@@ -48,10 +48,13 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
 
     const db = client.db('PawMart');
     const productsCollection = db.collection('Products');
