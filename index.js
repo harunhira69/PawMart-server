@@ -39,7 +39,8 @@ const verifyFireBaseToken = async (req, res, next) => {
 
 
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.irtmkrl.mongodb.net/?authSource=admin&retryWrites=true&w=majority`;
+const uri = 
+`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.irtmkrl.mongodb.net/?appName=Cluster0`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -278,4 +279,6 @@ app.get('/myOrder', async (req,res)=>{
 
 run().catch(console.dir);
 
-module.exports = app;
+app.listen(port, () => {
+  console.log(`🚀 Server running on port ${port}`);
+});
