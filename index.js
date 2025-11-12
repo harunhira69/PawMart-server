@@ -1,15 +1,42 @@
 const express = require('express');
 require('dotenv').config();
+const admin = require("firebase-admin");
+
+const decoded = Buffer.from(process.env.FIREBASE_SERVICE_KEY, "base64").toString("utf8");
+const serviceAccount = JSON.parse(decoded);
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
 app.use(cors());
 app.use(express.json());
+const verifyFireBaseToken = async (req, res, next) => {
+    const authorization = req.headers.authorization;
+    if (!authorization) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+    const token = authorization.split(' ')[1];
+    
+    try {
+        const decoded = await admin.auth().verifyIdToken(token);
+        console.log('inside token', decoded)
+        req.token_email = decoded.email;
+        next();
+    }
+    catch (error) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+}
 
-// ✅ Correct MongoDB URI with admin authentication
+
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.irtmkrl.mongodb.net/?authSource=admin&retryWrites=true&w=majority`;
 
 const client = new MongoClient(uri, {
@@ -30,7 +57,7 @@ async function run() {
     const listingsCollection = db.collection('Listings');
 
 
-    console.log('✅ Connected to MongoDB → Database: PawMart');
+    // console.log('✅ Connected to MongoDB → Database: PawMart');
 
     const collections = await db.listCollections().toArray();
     console.log('📦 PawMart Collections:', collections.map(c => c.name));
@@ -75,7 +102,7 @@ app.get('/my-listings',async(req,res)=>{
   }
 });
 // Update My listing
-app.put('/my-listings/:id',async(req,res)=>{
+app.put('/my-listings/:id',verifyFireBaseToken,async(req,res)=>{
   try{
     const id = req.params.id;
     const updateData = req.body;
@@ -99,7 +126,7 @@ app.put('/my-listings/:id',async(req,res)=>{
 });
 
 // Delete My Listing
-app.delete('/my-listings/:id',async(req,res)=>{
+app.delete('/my-listings/:id',verifyFireBaseToken,async(req,res)=>{
   try{
     const {id} = req.params;
     const result = await listingsCollection.deleteOne(

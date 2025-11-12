@@ -1,2 +1,4 @@
 node_modules
 .env
+pawmart_firebase_key.json
+.vercel
