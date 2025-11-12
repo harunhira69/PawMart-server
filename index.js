@@ -55,7 +55,7 @@ app.get('/', (req, res) => {
 
 async function run() {
   try {
-    // await client.connect();
+    await client.connect();
 
     const db = client.db('PawMart');
     const productsCollection = db.collection('Products');
@@ -108,28 +108,37 @@ app.get('/my-listings',async(req,res)=>{
   }
 });
 // Update My listing
-app.put('/my-listings/:id',verifyFireBaseToken,async(req,res)=>{
-  try{
-    const id = req.params.id;
-    const updateData = req.body;
 
-    const result = await listingsCollection.findOneAndUpdate(
-      {_id:new ObjectId(id)},
-      {
-        $set: updateData
-      },
-      { returnDocument:'after'}
-    );
-    console.log(result)
-    if(result && result.value){
-      res.send(result.value)
-    }else{
-      res.status(404).send({message:'Not Found'})
-    }
-  }catch(err){
-    res.send(err)
-  }
-});
+
+  // app.put('/my-listings/:id', verifyFireBaseToken, async (req, res) => {
+  //   try {
+  //     const id = req.params.id;
+  //     if (!ObjectId.isValid(id)) return res.status(400).json({ message: "Invalid listing ID" });
+
+  //     // Ensure listing exists and belongs to user
+  //     const listing = await listingsCollection.findOne({ _id: new ObjectId(id) });
+  //     if (!listing) return res.status(404).json({ message: "Listing not found" });
+  //     if (listing.email !== req.token_email) {
+  //       return res.status(403).json({ message: "Forbidden: cannot update this listing" });
+  //     }
+
+  //     const updateData = { ...req.body };
+  //     delete updateData._id; // never update _id
+
+  //     const result = await listingsCollection.findOneAndUpdate(
+  //       { _id: new ObjectId(id) },
+  //       { $set: updateData },
+  //       { returnDocument: "after" }
+  //     );
+
+  //     res.status(200).json(result.value);
+  //   } catch (err) {
+  //     console.error(err);
+  //     res.status(500).json({ message: "Server error", error: err.message });
+  //   }
+  // });
+
+
 
 // Delete My Listing
 app.delete('/my-listings/:id',verifyFireBaseToken,async(req,res)=>{
