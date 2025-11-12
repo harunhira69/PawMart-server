@@ -55,7 +55,7 @@ async function run() {
     const listing = req.body;
     listing.createdAt = new Date();
 
-    const result = await listingsCollection.insertOne(listing); // ✅ correct
+    const result = await listingsCollection.insertOne(listing); 
     console.log(result)
 
     res.status(201).json({ insertedId: result.insertedId });
@@ -63,6 +63,58 @@ async function run() {
     res.status(500).json({ message: 'Failed to add listing' });
   }
 });
+// get listing product
+app.get('/my-listings',async(req,res)=>{
+  try{
+    const email = req.query.email;
+    if(!email) return res.status(400).send({message:'Email required'})
+      const listings = await listingsCollection.find({email}).toArray();
+      res.send(listings)
+  }catch(err){
+    res.status(500).send({message:'Failed to Fetch'})
+  }
+});
+// Update My listing
+app.put('/my-listings/:id',async(req,res)=>{
+  try{
+    const id = req.params.id;
+    const updateData = req.body;
+
+    const result = await listingsCollection.findOneAndUpdate(
+      {_id:new ObjectId(id)},
+      {
+        $set: updateData
+      },
+      { returnDocument:'after'}
+    );
+    console.log(result)
+    if(result && result.value){
+      res.send(result.value)
+    }else{
+      res.status(404).send({message:'Not Found'})
+    }
+  }catch(err){
+    res.send(err)
+  }
+});
+
+// Delete My Listing
+app.delete('/my-listings/:id',async(req,res)=>{
+  try{
+    const {id} = req.params;
+    const result = await listingsCollection.deleteOne(
+      {_id:new ObjectId(id)}
+    );
+    if(result.deletedCount>0){
+      res.send({message:'Delete Successfully'})
+    }else{
+      res.send({message:'Not Found'})
+    }
+
+  }catch(err){
+    res.status(500).send({message:'Falied To Delete Listing'})
+  }
+})
 
 // show listing details
 app.get('/item/:id', async (req, res) => {
@@ -112,6 +164,24 @@ app.get('/order',async(req,res)=>{
    res.send(orders);
   }catch(err){
     res.send(err)
+  }
+});
+
+// delete Order
+app.delete('/order/:id',async(req,res)=>{
+  try{
+    const {id} = req.params;
+    const result = await orderCollection.deleteOne(
+      {_id:new ObjectId(id)}
+    );
+    if(result.deletedCount>0){
+      res.send({message:'Delete Successfully'})
+    }else{
+      res.send({message:'Not Found'})
+    }
+
+  }catch(err){
+    res.status(500).send({message:'Falied To Delete Listing'})
   }
 })
 
