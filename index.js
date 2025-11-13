@@ -29,7 +29,7 @@ const verifyFireBaseToken = async (req, res, next) => {
 
   try {
     const decoded = await admin.auth().verifyIdToken(token);
-    req.token_email = decoded.email; // attach email to request
+    req.token_email = decoded.email; 
     next();
   } catch (error) {
     console.error("Firebase token verification error:", error);
@@ -55,7 +55,7 @@ app.get('/', (req, res) => {
 
 async function run() {
   try {
-    // await client.connect();
+
 
     const db = client.db('PawMart');
     const productsCollection = db.collection('Products');
@@ -63,10 +63,9 @@ async function run() {
     const listingsCollection = db.collection('Listings');
 
 
-    console.log('✅ Connected to MongoDB → Database: PawMart');
 
-    // const collections = await db.listCollections().toArray();
-    // console.log('📦 PawMart Collections:', collections.map(c => c.name));
+
+
 
     // ------------------ ROUTES ------------------
 
@@ -107,36 +106,47 @@ async function run() {
         res.status(500).send({ message: 'Failed to Fetch' })
       }
     });
-    // Update My listing
 
 
-    // app.put('/my-listings/:id', verifyFireBaseToken, async (req, res) => {
-    //   try {
-    //     const id = req.params.id;
-    //     if (!ObjectId.isValid(id)) return res.status(400).json({ message: "Invalid listing ID" });
+   // Update My listing
 
-    //     // Ensure listing exists and belongs to user
-    //     const listing = await listingsCollection.findOne({ _id: new ObjectId(id) });
-    //     if (!listing) return res.status(404).json({ message: "Listing not found" });
-    //     if (listing.email !== req.token_email) {
-    //       return res.status(403).json({ message: "Forbidden: cannot update this listing" });
-    //     }
 
-    //     const updateData = { ...req.body };
-    //     delete updateData._id; // never update _id
 
-    //     const result = await listingsCollection.findOneAndUpdate(
-    //       { _id: new ObjectId(id) },
-    //       { $set: updateData },
-    //       { returnDocument: "after" }
-    //     );
+app.put('/my-listings/:id', async (req, res) => {
+  const { id } = req.params;
+  const updatedListing = req.body;
 
-    //     res.status(200).json(result.value);
-    //   } catch (err) {
-    //     console.error(err);
-    //     res.status(500).json({ message: "Server error", error: err.message });
-    //   }
-    // });
+
+  console.log("Received ID:", id);
+  console.log("Updated data:", updatedListing);
+
+  try {
+    const result = await listingsCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updatedListing }
+    );
+
+    console.log("MongoDB update result:", result);
+
+    if (result.matchedCount === 0) {
+    
+      return res.status(404).json({ message: "Listing not found" });
+    }
+
+    const updated = await listingsCollection.findOne({ _id: new ObjectId(id) });
+    // console.log("Updated listing:", updated);
+
+    res.status(200).send(updated);
+  } catch (error) {
+
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+});
+
+
+
+
+
 
 
 
@@ -197,12 +207,12 @@ async function run() {
     // get my-order page
     app.get('/order', async (req, res) => {
       const email = req.query.email;
-      console.log(email);
+      // console.log(email);
       if (!email) return res.status(400).send({ message: 'Email is required' })
       try {
 
         const orders = await orderCollection.find({ buyerEmail: email }).toArray();
-        console.log(orders)
+        // console.log(orders)
         res.send(orders);
       } catch (err) {
         res.send(err)
@@ -271,10 +281,10 @@ async function run() {
     app.get('/myOrder', async (req, res) => {
       try {
         const order = await orderCollection.find({}).toArray();
-        console.log(`✅ Sent ${order.length} products from PawMart.Products`);
+    
         res.send(order);
       } catch (error) {
-        console.error('❌ Error fetching products:', error);
+       
         res.status(500).json({ message: 'Failed to fetch products' });
       }
 
@@ -282,7 +292,7 @@ async function run() {
 
 
   } catch (err) {
-    console.error('🚨 MongoDB Connection Error:', err);
+    console.error(' MongoDB Connection Error:', err);
   }
 }
 
